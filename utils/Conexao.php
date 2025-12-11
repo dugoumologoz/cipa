@@ -4,7 +4,7 @@
         static string $usuario = "root";
         static string $password = "";
         static string $port = "3306";
-        static string $dbname = "cipa_t3_db";
+        static string $dbname = "projetocipat3";
 
         static function conectar() {
             try {

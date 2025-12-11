@@ -9,91 +9,102 @@
             $this->pdo = Conexao::conectar();
         }
 
-        public function criarUsuarioDAO(Usuario $usuario) {
-            try {
-                $SQL = "INSERT INTO usuario(
-                id_usuario,
-                nome_usuario,
-                sobrenome_usuario,
-                email_usuario,
-                senha_usuario,
-                data_nascimento_usuario,
-                data_contratacao_usuario,
-                ativo_usuario, adm_usuario,
-                matricula_usuario,
-                cpf_usuario,
-                telefone_usuario,
-                codigo_voto_usuario,
-                data_codigo_expiracao,
-                ultimo_acesso) VALUES (
-                    :nome,
-                    :sobrenome,
-                    :email,
-                    :senha,
-                    :data_nascimento,
-                    :data_contratacao,
-                    :ativo,
-                    :adm,
-                    :matricula,
-                    :cpf,
-                    :telefone,
-                    :codigo_voto,
-                    :ultimo_acesso
-                )";
+    public function criarUsuarioDAO(Usuario $usuario) {
+    $sql = "INSERT INTO usuario (
+                nome_usuario, sobrenome_usuario, email_usuario, senha_usuario,
+                data_nascimento_usuario, data_contratacao_usuario,
+                matricula_usuario, cpf_usuario, telefone_usuario,
+                ativo_usuario, adm_usuario
+             ) VALUES (
+                :nome, :sobrenome, :email, :senha,
+                :nasc, :contrat, :matric, :cpf, :tel,
+                :ativo, :adm
+             )";
 
-                $stmt = $this->pdo->prepare($SQL);
-                $stmt->bindValue(":nome", $usuario->getNomeUsuario(), PDO::PARAM_STR);
-                $stmt->bindValue(":sobrenome", $usuario->getSobrenomeUsuario(), PDO::PARAM_STR);
-                $stmt->bindValue(":email", $usuario->getEmailUsuario(), PDO::PARAM_STR);
-                $stmt->bindValue(":senha", $usuario->getSenhaUsuario(), PDO::PARAM_STR);
-                $stmt->bindValue(":data_nascimento", $usuario->getDatadeNascimentoUuario(), PDO::PARAM_STR);
-                $stmt->bindValue(":data_contratacao", $usuario->getDataContratacaoUsuario(), PDO::PARAM_STR);
-                $stmt->bindValue(":ativo", $usuario->getAtivoUsuario(), PDO::PARAM_BOOL);
-                $stmt->bindValue(":adm", $usuario->getAdmUsuario(), PDO::PARAM_STR);
-                $stmt->bindValue(":matricula", $usuario->getMatriculaUsuario(), PDO::PARAM_STR);
-                $stmt->bindValue(":cpf", $usuario->getCpfUsuario(), PDO::PARAM_STR);
-                $stmt->bindValue(":telefone", $usuario->getTelefoneUsuario(), PDO::PARAM_STR);
-                $stmt->bindValue(":codigo_voto", $usuario->getCodigoVotoUsuario(), PDO::PARAM_STR);
-                $stmt->bindValue(":ultimo_acesso", $usuario->getUltimoAcessoUsuario(), PDO::PARAM_STR);
+    $stmt = $this->pdo->prepare($sql);
+    
+    $stmt->execute([
+        ':nome'     => $usuario->getNomeUsuario(),
+        ':sobrenome'=> $usuario->getSobrenomeUsuario(),
+        ':email'    => $usuario->getEmailUsuario() ?: null,
+        ':senha'    => $usuario->getSenhaUsuario(), 
+        ':nasc'     => $usuario->getDatadeNascimentoUuario(),
+        ':contrat'  => $usuario->getDataContratacaoUsuario(),
+        ':matric'   => $usuario->getMatriculaUsuario(),
+        ':cpf'      => $usuario->getCpfUsuario(),
+        ':tel'      => $usuario->getTelefoneUsuario() ?: null,
+        ':ativo'    => $usuario->getAtivoUsuario() ? 1 : 0,
+        ':adm'      => $usuario->getAdmUsuario() ? 1 : 0,
+    ]);
+    }
+ public function listarTodos() {
+    $sql = "SELECT id_usuario, nome_usuario, sobrenome_usuario, email_usuario,
+                   data_nascimento_usuario, data_contratacao_usuario,
+                   matricula_usuario, telefone_usuario, ativo_usuario
+            FROM usuario ORDER BY nome_usuario";
+    $stmt = $this->pdo->query($sql);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 
-                $stmt->execute();
-            }catch (PDOException $e) {
-                error_log("Erro ao instanciar um usuário: " . $e->getMessage());
-            }
-        }
-        public function getUsuarioPorId(int $id) {
-            try {
-                $SQL = "SELECT * FROM usuario WHERE id_usuario = :id";
-                $stmt = $this->pdo->prepare($SQL);
-                $stmt->bindValue(":id", $id, PDO::PARAM_INT);
-                $stmt->execute();
-                $result = $stmt->fetch(PDO::FETCH_ASSOC);
-                if ($result) {
-                    $usuario = new Usuario();
-                    $usuario->setIdUsuario($result['id_usuario']);
-                    $usuario->setNomeUsuario($result['nome_usuario']);
-                    $usuario->setSobrenomeUsuario($result['sobrenome_usuario']);
-                    $usuario->setEmailUsuario($result['email_usuario']);
-                    $usuario->setSenhaUsuario($result['senha_usuario']);
-                    $usuario->setDataDeNascimentoUsuario($result['data_nascimento_usuario']);
-                    $usuario->setDataContratacaoUsuario($result['data_contratacao_usuario']);
-                    $usuario->setAtivoUsuario($result['ativo_usuario']);
-                    $usuario->setAdmUsuario($result['adm_usuario']);
-                    $usuario->setMatriculaUsuario($result['matricula_usuario']);
-                    $usuario->setCpfUsuario($result['cpf_usuario']);
-                    $usuario->setTelefoneUsuario($result['telefone_usuario']);
-                    $usuario->setCodigoVotoUsuario($result['codigo_voto_usuario']);
-                    $usuario->setDataCodigoExpiracao($result['data_codigo_expiracao']);
-                    $usuario->setUltimoAcessoUsuario($result['ultimo_acesso']);
-                    return $usuario;
-                }
-                return null;
-            } catch (PDOException $e) {
-                error_log("Erro ao buscar usuário por ID: " . $e->getMessage());
-                return null;
-            }
+public function getUsuarioPorId(int $id) {
+        $sql = "SELECT * FROM usuario WHERE id_usuario = :id";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':id' => $id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function atualizar(Usuario $usuario) {
+    try {
+        $sql = "UPDATE usuario SET
+                    nome_usuario = :nome,
+                    sobrenome_usuario = :sobrenome,
+                    email_usuario = :email,
+                    data_nascimento_usuario = :nascimento,
+                    data_contratacao_usuario = :contratacao,
+                    matricula_usuario = :matricula,
+                    cpf_usuario = :cpf,
+                    telefone_usuario = :telefone,
+                    ativo_usuario = :ativo,
+                    adm_usuario = :adm
+                    " . (!empty($usuario->getSenhaUsuario()) ? ", senha_usuario = :senha" : "") . "
+                WHERE id_usuario = :id";
+
+        $stmt = $this->pdo->prepare($sql);
+
+        $params = [
+            ':nome'        => $usuario->getNomeUsuario(),
+            ':sobrenome'   => $usuario->getSobrenomeUsuario(),
+            ':email'       => $usuario->getEmailUsuario() ?: null,
+            ':nascimento'  => $usuario->getDatadeNascimentoUuario(),
+            ':contratacao' => $usuario->getDataContratacaoUsuario(),
+            ':matricula'   => $usuario->getMatriculaUsuario(),
+            ':cpf'         => $usuario->getCpfUsuario(),
+            ':telefone'    => $usuario->getTelefoneUsuario() ?: null,
+            ':ativo'       => $usuario->getAtivoUsuario() ? 1 : 0,
+            ':adm'         => $usuario->getAdmUsuario() ? 1 : 0,
+            ':id'          => $usuario->getIdUsuario()
+        ];
+
+        if (!empty($usuario->getSenhaUsuario())) {
+            $params[':senha'] = password_hash($usuario->getSenhaUsuario(), PASSWORD_BCRYPT);
         }
 
+        $stmt->execute($params);
+        return true;
+    } catch (PDOException $e) {
+        echo "Erro ao atualizar: " . $e->getMessage();
+        return false;
+        return false;
+    }
+}
+
+
+
+public function excluir($id) {
+    $sql = "DELETE FROM usuario WHERE id_usuario = :id";
+    $stmt = $this->pdo->prepare($sql);
+    $stmt->execute([':id' => $id]);
+}
         
     }
 ?>
